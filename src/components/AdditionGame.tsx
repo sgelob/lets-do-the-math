@@ -23,6 +23,46 @@ export function AdditionGame() {
   const [playerName, setPlayerName] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [gameStarted, setGameStarted] = useState(false);
+  // Sound effects
+  const playCorrectSound = () => {
+    try {
+      // Basketball buzzer/success sound using Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      // Create a rising buzzer sound
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.log('Audio playback not supported');
+    }
+  };
+  const playWrongSound = () => {
+    try {
+      // Fart sound using Web Audio API (comedic low frequency)
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      // Create a descending "fart" sound
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.3);
+      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    } catch (error) {
+      console.log('Audio playback not supported');
+    }
+  };
   // Random encouraging messages with player name
   const getEncouragementMessages = (name: string) => [`Bravo ${name}! Continua così! 🌟`, `Grande ${name}! Sei un campione! 🚀`, `Fantastico ${name}! Vai così! 💪`, `Bravissimo ${name}! Stai andando alla grande! ⭐`, `Ottimo lavoro ${name}! Non fermarti! 🎉`, `Sei fortissimo ${name}! Continua! 🔥`, `Complimenti ${name}! Sei bravissimo! ✨`, `Wow ${name}! Che talento! 🌈`];
   const [encouragement, setEncouragement] = useState('');
@@ -142,6 +182,7 @@ export function AdditionGame() {
     }
     if (input === correct) {
       setStatus('correct');
+      playCorrectSound(); // Play success sound
       const newStreak = streak + 1;
       setStreak(newStreak);
       // Check for 10 in a row bonus
@@ -155,6 +196,7 @@ export function AdditionGame() {
       }
     } else {
       setStatus('incorrect');
+      playWrongSound(); // Play fart sound
       setStreak(0); // Reset streak on wrong answer
       setShake(s => s + 1); // Trigger shake animation
     }
