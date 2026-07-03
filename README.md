@@ -1,10 +1,10 @@
 # Let's Do the Math
 
-A modern web application built with Vite for performing mathematical calculations and pattern recognition. This project was generated using [Magic Patterns](https://magicpatterns.com) based on a custom design.
+A modern web application for performing mathematical calculations and pattern recognition. Built with Vite for fast performance and a smooth user experience.
 
-## Project Overview
+## About
 
-This is a math-focused web application that provides an intuitive interface for mathematical operations and pattern visualization. Built with modern web technologies, it offers fast performance and a smooth user experience.
+This is an interactive math application that provides an intuitive interface for mathematical operations and pattern visualization. Designed with modern web technologies to deliver a responsive and efficient user experience.
 
 ## Tech Stack
 
@@ -46,7 +46,7 @@ The application will be available at `http://localhost:5173` (or another port if
 
 ## Design Reference
 
-This application was designed using Magic Patterns. View the [original design](https://www.magicpatterns.com/c/i2cfpuk2cjaxwbjivy7red).
+This application was designed using [Magic Patterns](https://magicpatterns.com). View the [original design](https://www.magicpatterns.com/c/i2cfpuk2cjaxwbjivy7red).
 
 ## License
 
