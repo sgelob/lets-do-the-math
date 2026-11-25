@@ -1,4 +1,6 @@
 export type Language = 'it' | 'en';
+export type Operation = 'add' | 'subtract' | 'multiply' | 'divide';
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'veryhard';
 
 const it = {
   pageTitle: 'Facciamo i conti',
@@ -10,11 +12,13 @@ const it = {
   settings: 'Impostazioni',
   difficulty: 'Difficoltà',
   levels: ['Facile', 'Medio', 'Difficile', 'Estremo'],
-  levelHints: {
-    easy: 'Numeri piccoli (1-10)',
-    medium: 'Numeri medi (1-100)',
-    hard: 'Numeri grandi (1-1000)',
-    veryhard: 'Numeri enormi (1-10000)'
+  // max is the largest number used for this operation and level (see getRanges)
+  levelHint: (op: Operation, diff: Difficulty, max: number) => {
+    const n = max.toLocaleString('it-IT');
+    if (op === 'multiply') return `Tabelline fino al ${n}`;
+    if (op === 'divide') return `Dividi per numeri fino a ${n}`;
+    const size = { easy: 'Numeri piccoli', medium: 'Numeri medi', hard: 'Numeri grandi', veryhard: 'Numeri enormi' }[diff];
+    return `${size} (1-${n})`;
   },
   language: 'Lingua',
   close: 'Chiudi',
@@ -31,8 +35,9 @@ const it = {
   check: 'CONTROLLA',
   next: 'NUOVA',
   skip: 'Cambia',
-  success: ['Bravissimo! 🎉', 'Perfetto! 🌟', 'Fantastico! 🚀', 'Eccellente! ⭐', 'Sei un genio! 🧠', 'Incredibile! 💪', 'Magnifico! 🎊', 'Straordinario! ✨', 'Grandioso! 🎯', 'Fenomenale! 🌈'],
-  encouragement: (name: string) => [`Bravo ${name}! Continua così! 🌟`, `Grande ${name}! Sei un campione! 🚀`, `Fantastico ${name}! Vai così! 💪`, `Bravissimo ${name}! Stai andando alla grande! ⭐`, `Ottimo lavoro ${name}! Non fermarti! 🎉`, `Sei fortissimo ${name}! Continua! 🔥`, `Complimenti ${name}! Sei bravissimo! ✨`, `Wow ${name}! Che talento! 🌈`]
+  success: ['Evviva! 🎉', 'Perfetto! 🌟', 'Fantastico! 🚀', 'Eccellente! ⭐', 'Sei un genio! 🧠', 'Incredibile! 💪', 'Magnifico! 🎊', 'Straordinario! ✨', 'Grandioso! 🎯', 'Fenomenale! 🌈'],
+  // Worded so no adjective or noun changes with the child's gender
+  encouragement: (name: string) => [`Evviva ${name}! Continua così! 🌟`, `Grande ${name}! Sei una forza! 🚀`, `Super ${name}! Vai così! 💪`, `Forza ${name}! Stai andando alla grande! ⭐`, `Ottimo lavoro ${name}! Non fermarti! 🎉`, `Sei una potenza, ${name}! Continua! 🔥`, `Complimenti ${name}! Che bravura! ✨`, `Wow ${name}! Che talento! 🌈`]
 };
 
 export type Strings = typeof it;
@@ -47,11 +52,12 @@ const en: Strings = {
   settings: 'Settings',
   difficulty: 'Difficulty',
   levels: ['Easy', 'Medium', 'Hard', 'Extreme'],
-  levelHints: {
-    easy: 'Small numbers (1-10)',
-    medium: 'Medium numbers (1-100)',
-    hard: 'Big numbers (1-1000)',
-    veryhard: 'Huge numbers (1-10000)'
+  levelHint: (op: Operation, diff: Difficulty, max: number) => {
+    const n = max.toLocaleString('en-GB');
+    if (op === 'multiply') return `Times tables up to ${n}`;
+    if (op === 'divide') return `Divide by numbers up to ${n}`;
+    const size = { easy: 'Small numbers', medium: 'Medium numbers', hard: 'Big numbers', veryhard: 'Huge numbers' }[diff];
+    return `${size} (1-${n})`;
   },
   language: 'Language',
   close: 'Close',
