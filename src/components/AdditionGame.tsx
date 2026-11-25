@@ -1,9 +1,49 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Check, Star, Plus, Minus, X, Divide, Settings, X as CloseIcon, Globe } from 'lucide-react';
 import { Language, Operation, Difficulty, strings, loadLanguage, saveLanguage } from '../i18n';
 type GameStatus = 'idle' | 'correct' | 'incorrect';
-const pickIndex = (length: number) => Math.floor(Math.random() * length);
+// Pick an item from a list using a stored random roll in [0, 1), so the
+// same pick survives a language change even if list lengths differ
+const pickWithRoll = <T,>(items: T[], roll: number) => items[Math.floor(roll * items.length)];
+// Get ranges based on difficulty and operation
+const getRanges = (op: Operation, diff: Difficulty) => {
+  switch (op) {
+    case 'add':
+    case 'subtract':
+      if (diff === 'easy') return 10;
+      if (diff === 'medium') return 100;
+      if (diff === 'hard') return 1000;
+      return 10000; // veryhard
+    case 'multiply':
+    case 'divide':
+      if (diff === 'easy') return 5;
+      if (diff === 'medium') return 12;
+      if (diff === 'hard') return 20;
+      return 50; // veryhard
+    default:
+      return 100;
+  }
+};
+type WindowWithWebkitAudio = Window & { webkitAudioContext?: typeof AudioContext };
+// Play a short tone; each sound gets its own context, closed when it finishes
+const playTone = (setup: (ctx: AudioContext, oscillator: OscillatorNode, gain: GainNode) => number) => {
+  try {
+    const AudioCtx = window.AudioContext || (window as WindowWithWebkitAudio).webkitAudioContext;
+    if (!AudioCtx) return;
+    const audioContext = new AudioCtx();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    const duration = setup(audioContext, oscillator, gainNode);
+    oscillator.onended = () => void audioContext.close();
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration);
+  } catch {
+    console.log('Audio playback not supported');
+  }
+};
 export function AdditionGame() {
   const [num1, setNum1] = useState(0);
   const [num2, setNum2] = useState(0);
@@ -22,88 +62,45 @@ export function AdditionGame() {
   useEffect(() => {
     saveLanguage(language);
     document.documentElement.lang = language;
-    document.title = t.pageTitle;
+    document.title = strings[language].pageTitle;
   }, [language]);
   // Player name and game start
   const [playerName, setPlayerName] = useState('');
   const [nameInput, setNameInput] = useState('');
   const [gameStarted, setGameStarted] = useState(false);
   // Sound effects
-  const playCorrectSound = () => {
-    try {
-      // Basketball buzzer/success sound using Web Audio API
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      // Create a rising buzzer sound
-      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.2);
-    } catch (error) {
-      console.log('Audio playback not supported');
-    }
-  };
-  const playWrongSound = () => {
-    try {
-      // Fart sound using Web Audio API (comedic low frequency)
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      // Create a descending "fart" sound
-      oscillator.type = 'sawtooth';
-      oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-      oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.3);
-      gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
-    } catch (error) {
-      console.log('Audio playback not supported');
-    }
-  };
-  // Random messages are stored as indices so they follow the selected language
-  const [encouragementIndex, setEncouragementIndex] = useState(0);
+  const playCorrectSound = () => playTone((ctx, oscillator, gain) => {
+    // Basketball buzzer/success sound: a rising tone
+    oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+    return 0.2;
+  });
+  const playWrongSound = () => playTone((ctx, oscillator, gain) => {
+    // Comedic descending "fart" sound
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    return 0.3;
+  });
+  // Random messages are stored as rolls so they follow the selected language
+  const [encouragementRoll, setEncouragementRoll] = useState(0);
   useEffect(() => {
-    if (playerName) setEncouragementIndex(pickIndex(t.encouragement(playerName).length));
+    if (playerName) setEncouragementRoll(Math.random());
   }, [playerName]);
-  const encouragement = playerName ? t.encouragement(playerName)[encouragementIndex] : '';
-  const [successIndex, setSuccessIndex] = useState(0);
+  const encouragement = playerName ? pickWithRoll(t.encouragement(playerName), encouragementRoll) : '';
+  const [successRoll, setSuccessRoll] = useState(0);
   useEffect(() => {
-    if (status === 'correct') setSuccessIndex(pickIndex(t.success.length));
+    if (status === 'correct') setSuccessRoll(Math.random());
   }, [status]);
-  const successMessage = t.success[successIndex];
+  const successMessage = pickWithRoll(t.success, successRoll);
   const languageButtonClass = (lang: Language) => `rounded-xl border-[3px] border-black font-bold transition-all flex items-center justify-center gap-2
     ${language === lang ? 'bg-[#7DFF82] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-y-[2px]' : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-50 active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}`;
-  // Get ranges based on difficulty and operation
-  const getRanges = (op: Operation, diff: Difficulty) => {
-    switch (op) {
-      case 'add':
-      case 'subtract':
-        if (diff === 'easy') return 10;
-        if (diff === 'medium') return 100;
-        if (diff === 'hard') return 1000;
-        return 10000;
-      // veryhard
-      case 'multiply':
-      case 'divide':
-        if (diff === 'easy') return 5;
-        if (diff === 'medium') return 12;
-        if (diff === 'hard') return 20;
-        return 50;
-      // veryhard
-      default:
-        return 100;
-    }
-  };
   // Generate numbers based on selected operation and difficulty
-  const generateProblem = (selectedOp: Operation = operation, selectedDiff: Difficulty = difficulty) => {
+  const generateProblem = useCallback((selectedOp: Operation = operation, selectedDiff: Difficulty = difficulty) => {
     let n1 = 0;
     let n2 = 0;
     const range = getRanges(selectedOp, selectedDiff);
@@ -120,18 +117,19 @@ export function AdditionGame() {
         n1 = Math.floor(Math.random() * range) + 1;
         n2 = Math.floor(Math.random() * range) + 1;
         break;
-      case 'divide':
+      case 'divide': {
         // Generate result first to ensure clean division
         const result = Math.floor(Math.random() * range) + 1;
         n2 = Math.floor(Math.random() * range) + 1;
         n1 = result * n2;
         break;
+      }
     }
     setNum1(n1);
     setNum2(n2);
     setUserAnswer('');
     setStatus('idle');
-  };
+  }, [operation, difficulty]);
   // Handle operation change
   const changeOperation = (op: Operation) => {
     setOperation(op);
@@ -142,12 +140,6 @@ export function AdditionGame() {
     setDifficulty(diff);
     generateProblem(operation, diff);
   };
-  // Initial generation
-  useEffect(() => {
-    if (gameStarted) {
-      generateProblem();
-    }
-  }, [gameStarted]);
   // Keyboard shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -159,7 +151,7 @@ export function AdditionGame() {
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [operation, difficulty]);
+  }, [generateProblem]);
   const checkAnswer = () => {
     let correct = 0;
     const input = parseInt(userAnswer);
@@ -255,6 +247,7 @@ export function AdditionGame() {
     if (nameInput.trim()) {
       setPlayerName(nameInput.trim());
       setGameStarted(true);
+      generateProblem();
     }
   };
   const handleNameKeyDown = (e: React.KeyboardEvent) => {
