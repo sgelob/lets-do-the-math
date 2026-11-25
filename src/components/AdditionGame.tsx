@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Check, Star, Sparkles, Plus, Minus, X, Divide, Settings, X as CloseIcon, Globe } from 'lucide-react';
+import { Language, strings, loadLanguage, saveLanguage } from '../i18n';
 type GameStatus = 'idle' | 'correct' | 'incorrect';
 type Operation = 'add' | 'subtract' | 'multiply' | 'divide';
 type Difficulty = 'easy' | 'medium' | 'hard' | 'veryhard';
-type Language = 'it' | 'en';
+const pickIndex = (length: number) => Math.floor(Math.random() * length);
 export function AdditionGame() {
   const [num1, setNum1] = useState(0);
   const [num2, setNum2] = useState(0);
@@ -18,7 +19,13 @@ export function AdditionGame() {
   // Settings state
   const [showSettings, setShowSettings] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
-  const [language, setLanguage] = useState<Language>('it');
+  const [language, setLanguage] = useState<Language>(loadLanguage);
+  const t = strings[language];
+  useEffect(() => {
+    saveLanguage(language);
+    document.documentElement.lang = language;
+    document.title = t.pageTitle;
+  }, [language]);
   // Player name and game start
   const [playerName, setPlayerName] = useState('');
   const [nameInput, setNameInput] = useState('');
@@ -63,26 +70,19 @@ export function AdditionGame() {
       console.log('Audio playback not supported');
     }
   };
-  // Random encouraging messages with player name
-  const getEncouragementMessages = (name: string) => [`Bravo ${name}! Continua così! 🌟`, `Grande ${name}! Sei un campione! 🚀`, `Fantastico ${name}! Vai così! 💪`, `Bravissimo ${name}! Stai andando alla grande! ⭐`, `Ottimo lavoro ${name}! Non fermarti! 🎉`, `Sei fortissimo ${name}! Continua! 🔥`, `Complimenti ${name}! Sei bravissimo! ✨`, `Wow ${name}! Che talento! 🌈`];
-  const [encouragement, setEncouragement] = useState('');
-  // Update encouragement when name changes
+  // Random messages are stored as indices so they follow the selected language
+  const [encouragementIndex, setEncouragementIndex] = useState(0);
   useEffect(() => {
-    if (playerName) {
-      const messages = getEncouragementMessages(playerName);
-      setEncouragement(messages[Math.floor(Math.random() * messages.length)]);
-    }
+    if (playerName) setEncouragementIndex(pickIndex(t.encouragement(playerName).length));
   }, [playerName]);
-  // Random success messages
-  const successMessages = ['Bravissimo! 🎉', 'Perfetto! 🌟', 'Fantastico! 🚀', 'Eccellente! ⭐', 'Sei un genio! 🧠', 'Incredibile! 💪', 'Magnifico! 🎊', 'Straordinario! ✨', 'Grandioso! 🎯', 'Fenomenale! 🌈'];
-  const [successMessage, setSuccessMessage] = useState(successMessages[0]);
-  // Update success message when status becomes correct
+  const encouragement = playerName ? t.encouragement(playerName)[encouragementIndex] : '';
+  const [successIndex, setSuccessIndex] = useState(0);
   useEffect(() => {
-    if (status === 'correct') {
-      const randomMessage = successMessages[Math.floor(Math.random() * successMessages.length)];
-      setSuccessMessage(randomMessage);
-    }
+    if (status === 'correct') setSuccessIndex(pickIndex(t.success.length));
   }, [status]);
+  const successMessage = t.success[successIndex];
+  const languageButtonClass = (lang: Language) => `rounded-xl border-[3px] border-black font-bold transition-all flex items-center justify-center gap-2
+    ${language === lang ? 'bg-[#7DFF82] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-y-[2px]' : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-50 active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}`;
   // Get ranges based on difficulty and operation
   const getRanges = (op: Operation, diff: Difficulty) => {
     switch (op) {
@@ -281,6 +281,16 @@ export function AdditionGame() {
           <span className="text-7xl filter drop-shadow-lg">💧</span>
         </div>
 
+        {/* Language switch, available before the game starts */}
+        <div className="absolute top-6 left-6 flex gap-3 z-20" role="group" aria-label={t.language}>
+          <button onClick={() => setLanguage('it')} aria-pressed={language === 'it'} className={`${languageButtonClass('it')} py-2 px-3 text-base`}>
+            🇮🇹 IT
+          </button>
+          <button onClick={() => setLanguage('en')} aria-pressed={language === 'en'} className={`${languageButtonClass('en')} py-2 px-3 text-base`}>
+            🇬🇧 EN
+          </button>
+        </div>
+
         <motion.div initial={{
         scale: 0.9,
         opacity: 0
@@ -310,7 +320,7 @@ export function AdditionGame() {
           }} transition={{
             delay: 0.3
           }} className="text-4xl md:text-5xl font-black text-black mb-4 text-center">
-              Ciao! Come ti chiami?
+              {t.welcomeTitle}
             </motion.h1>
 
             <motion.p initial={{
@@ -322,7 +332,7 @@ export function AdditionGame() {
           }} transition={{
             delay: 0.4
           }} className="text-xl text-black/60 font-bold mb-12 text-center">
-              Dimmi il tuo nome per iniziare a giocare! 🎮
+              {t.welcomeSubtitle}
             </motion.p>
 
             <motion.input initial={{
@@ -333,7 +343,7 @@ export function AdditionGame() {
             opacity: 1
           }} transition={{
             delay: 0.5
-          }} type="text" value={nameInput} onChange={e => setNameInput(e.target.value)} onKeyDown={handleNameKeyDown} placeholder="Il tuo nome..." className="w-full max-w-md h-20 text-center text-3xl font-bold border-[5px] border-black rounded-2xl focus:outline-none focus:ring-8 focus:ring-yellow-300 transition-all bg-gray-50 text-black mb-8 px-6" autoFocus />
+          }} type="text" value={nameInput} onChange={e => setNameInput(e.target.value)} onKeyDown={handleNameKeyDown} placeholder={t.namePlaceholder} className="w-full max-w-md h-20 text-center text-3xl font-bold border-[5px] border-black rounded-2xl focus:outline-none focus:ring-8 focus:ring-yellow-300 transition-all bg-gray-50 text-black mb-8 px-6" autoFocus />
 
             <motion.button initial={{
             scale: 0.9,
@@ -344,7 +354,7 @@ export function AdditionGame() {
           }} transition={{
             delay: 0.6
           }} onClick={handleStartGame} disabled={!nameInput.trim()} className="bg-[#5454FF] hover:bg-[#4242FF] disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-3xl font-black py-6 px-16 rounded-2xl border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-3">
-              INIZIA! 🚀
+              {t.start}
             </motion.button>
           </div>
         </motion.div>
@@ -372,7 +382,7 @@ export function AdditionGame() {
       </div>
 
       {/* Settings Button */}
-      <button onClick={() => setShowSettings(true)} className="absolute top-6 left-6 bg-white hover:bg-gray-50 text-black p-3 rounded-2xl border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all z-20" aria-label="Impostazioni">
+      <button onClick={() => setShowSettings(true)} className="absolute top-6 left-6 bg-white hover:bg-gray-50 text-black p-3 rounded-2xl border-[4px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all z-20" aria-label={t.settings}>
         <Settings size={32} strokeWidth={3} />
       </button>
 
@@ -401,9 +411,9 @@ export function AdditionGame() {
         }} className="fixed z-50 bg-white border-[6px] border-black rounded-[2rem] p-8 w-full max-w-md shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-3xl font-black text-black">
-                  Impostazioni ⚙️
+                  {t.settings} ⚙️
                 </h2>
-                <button onClick={() => setShowSettings(false)} className="bg-red-100 hover:bg-red-200 p-2 rounded-xl border-[3px] border-black transition-colors">
+                <button onClick={() => setShowSettings(false)} aria-label={t.close} className="bg-red-100 hover:bg-red-200 p-2 rounded-xl border-[3px] border-black transition-colors">
                   <CloseIcon size={24} strokeWidth={3} />
                 </button>
               </div>
@@ -412,14 +422,11 @@ export function AdditionGame() {
               <div className="mb-8">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <Star className="fill-yellow-400 text-black" size={24} />
-                  Difficoltà
+                  {t.difficulty}
                 </h3>
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between text-xs font-bold text-gray-500 px-2">
-                    <span>Facile</span>
-                    <span>Medio</span>
-                    <span>Difficile</span>
-                    <span>Estremo</span>
+                    {t.levels.map(level => <span key={level}>{level}</span>)}
                   </div>
                   <input type="range" min="0" max="3" step="1" value={difficulty === 'easy' ? 0 : difficulty === 'medium' ? 1 : difficulty === 'hard' ? 2 : 3} onChange={e => {
                 const val = parseInt(e.target.value);
@@ -427,10 +434,7 @@ export function AdditionGame() {
                 changeDifficulty(newDiff);
               }} className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer border-[3px] border-black accent-[#5454FF]" />
                   <div className="text-center font-bold text-lg mt-2 text-[#5454FF]">
-                    {difficulty === 'easy' && 'Numeri piccoli (1-10)'}
-                    {difficulty === 'medium' && 'Numeri medi (1-100)'}
-                    {difficulty === 'hard' && 'Numeri grandi (1-1000)'}
-                    {difficulty === 'veryhard' && 'Numeri enormi (1-10000)'}
+                    {t.levelHints[difficulty]}
                   </div>
                 </div>
               </div>
@@ -439,17 +443,13 @@ export function AdditionGame() {
               <div className="mb-4">
                 <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                   <Globe className="text-black" size={24} />
-                  Lingua
+                  {t.language}
                 </h3>
                 <div className="flex gap-4">
-                  <button onClick={() => setLanguage('it')} className={`flex-1 py-3 px-4 rounded-xl border-[3px] border-black font-bold text-lg transition-all flex items-center justify-center gap-2
-                      ${language === 'it' ? 'bg-[#7DFF82] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-y-[2px]' : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-50 active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
-                    `}>
+                  <button onClick={() => setLanguage('it')} aria-pressed={language === 'it'} className={`${languageButtonClass('it')} flex-1 py-3 px-4 text-lg`}>
                     🇮🇹 Italiano
                   </button>
-                  <button onClick={() => setLanguage('en')} className={`flex-1 py-3 px-4 rounded-xl border-[3px] border-black font-bold text-lg transition-all flex items-center justify-center gap-2
-                      ${language === 'en' ? 'bg-[#7DFF82] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-y-[2px]' : 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-50 active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
-                    `}>
+                  <button onClick={() => setLanguage('en')} aria-pressed={language === 'en'} className={`${languageButtonClass('en')} flex-1 py-3 px-4 text-lg`}>
                     🇬🇧 English
                   </button>
                 </div>
@@ -558,9 +558,9 @@ export function AdditionGame() {
         }}>
               <div className="bg-[#FFDE59] border-[6px] border-black rounded-3xl px-12 py-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                 <div className="text-8xl font-black text-black mb-2">+10</div>
-                <div className="text-3xl font-black text-black">BONUS! 🎉</div>
+                <div className="text-3xl font-black text-black">{t.bonus}</div>
                 <div className="text-xl font-bold text-black/70">
-                  10 di fila!
+                  {t.bonusSubtitle}
                 </div>
               </div>
             </motion.div>
@@ -581,7 +581,7 @@ export function AdditionGame() {
       scale: 1,
       opacity: 1
     }} className="absolute top-24 right-6 bg-[#FFDE59] border-3 border-black rounded-xl px-4 py-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] z-20">
-          <div className="text-sm font-bold text-black/60">Serie</div>
+          <div className="text-sm font-bold text-black/60">{t.streak}</div>
           <div className="text-2xl font-black text-black">{streak}/10 🔥</div>
         </motion.div>}
 
@@ -595,7 +595,7 @@ export function AdditionGame() {
         <div className="bg-white border-[6px] border-black rounded-[3rem] p-6 md:p-12 shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative flex flex-col items-center">
           {/* Title */}
           <h1 className="text-center text-3xl md:text-4xl font-black text-black mb-8 uppercase tracking-wider transform -rotate-1">
-            Facciamo i conti! 🧮
+            {t.title}
           </h1>
 
           {/* Operation Selector */}
@@ -603,20 +603,20 @@ export function AdditionGame() {
             {[{
             id: 'add',
             icon: Plus,
-            label: 'Addizioni'
+            label: t.operations.add
           }, {
             id: 'subtract',
             icon: Minus,
-            label: 'Sottrazioni'
+            label: t.operations.subtract
           }, {
             id: 'multiply',
             icon: X,
-            label: 'Moltiplicazioni'
+            label: t.operations.multiply
           }, {
             id: 'divide',
             icon: Divide,
-            label: 'Divisioni'
-          }].map(op => <button key={op.id} onClick={() => changeOperation(op.id as Operation)} className={`
+            label: t.operations.divide
+          }].map(op => <button key={op.id} onClick={() => changeOperation(op.id as Operation)} aria-label={op.label} className={`
                   flex items-center gap-2 px-3 md:px-4 py-3 rounded-xl border-[3px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-lg transition-all
                   ${operation === op.id ? 'bg-[#7DFF82] translate-y-[2px] shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-white hover:bg-gray-50 active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
                 `}>
@@ -709,7 +709,7 @@ export function AdditionGame() {
               y: -20,
               opacity: 0
             }} className="text-3xl md:text-4xl font-black text-[#FF5757]">
-                  Riprova! 💪
+                  {t.tryAgain}
                 </motion.div>}
             </AnimatePresence>
           </div>
@@ -718,15 +718,15 @@ export function AdditionGame() {
           <div className="flex flex-col md:flex-row gap-6 justify-center w-full">
             {status !== 'correct' ? <button onClick={checkAnswer} className="bg-[#5454FF] hover:bg-[#4242FF] text-white text-2xl md:text-3xl font-black py-6 px-12 rounded-2xl border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-3">
                 <Check size={32} strokeWidth={4} />
-                CONTROLLA
+                {t.check}
               </button> : <button onClick={() => generateProblem()} className="bg-[#7DFF82] hover:bg-[#6BE670] text-black text-2xl md:text-3xl font-black py-6 px-12 rounded-2xl border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-3 animate-pulse">
                 <RefreshCw size={32} strokeWidth={4} />
-                NUOVA
+                {t.next}
               </button>}
 
             {status !== 'correct' && <button onClick={() => generateProblem()} className="bg-white hover:bg-gray-100 text-black text-xl md:text-2xl font-bold py-6 px-8 rounded-2xl border-[4px] border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center justify-center gap-2">
                 <RefreshCw size={24} strokeWidth={3} />
-                Cambia
+                {t.skip}
               </button>}
           </div>
         </div>

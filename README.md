@@ -26,9 +26,9 @@ You can change these in the settings at any time:
 
 Subtraction never goes below zero, and division always comes out to a whole number, so young players never run into negatives or remainders.
 
-## Language
+## Languages
 
-The game is in Italian. Settings has an Italian/English switch, but English text isn't wired up yet.
+Italian (the default) and English. Switch with the 🇮🇹 IT / 🇬🇧 EN buttons on the name screen, or in Settings during a game. The game remembers your choice on that device.
 
 ## Tech stack
 
