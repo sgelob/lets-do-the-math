@@ -1,6 +1,6 @@
 # Facciamo i conti! (Let's Do the Math)
 
-**▶ Play it: https://sgelob.github.io/lets-do-the-math/**
+**▶ Play it: https://olegs.be/lets-do-the-math/**
 
 A playful arithmetic game for kids. Each round shows one problem, the child types the answer, and the game celebrates every right answer. It's built to make drilling the four operations feel like a game, not homework.
 
