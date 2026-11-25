@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, Check, Star, Sparkles, Plus, Minus, X, Divide, Settings, X as CloseIcon, Globe } from 'lucide-react';
-import { Language, strings, loadLanguage, saveLanguage } from '../i18n';
+import { Language, Operation, Difficulty, strings, loadLanguage, saveLanguage } from '../i18n';
 type GameStatus = 'idle' | 'correct' | 'incorrect';
-type Operation = 'add' | 'subtract' | 'multiply' | 'divide';
-type Difficulty = 'easy' | 'medium' | 'hard' | 'veryhard';
 const pickIndex = (length: number) => Math.floor(Math.random() * length);
 export function AdditionGame() {
   const [num1, setNum1] = useState(0);
@@ -434,7 +432,7 @@ export function AdditionGame() {
                 changeDifficulty(newDiff);
               }} className="w-full h-4 bg-gray-200 rounded-lg appearance-none cursor-pointer border-[3px] border-black accent-[#5454FF]" />
                   <div className="text-center font-bold text-lg mt-2 text-[#5454FF]">
-                    {t.levelHints[difficulty]}
+                    {t.levelHint(operation, difficulty, getRanges(operation, difficulty))}
                   </div>
                 </div>
               </div>

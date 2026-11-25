@@ -6,7 +6,7 @@ A playful arithmetic game for kids. Each round shows one problem, the child type
 
 ## How it plays
 
-1. The child types their name, and the game cheers them on by name ("Bravo Marco! Continua così! 🌟").
+1. The child types their name, and the game cheers them on by name ("Evviva Marco! Continua così! 🌟").
 2. Pick an operation: addition, subtraction, multiplication or division.
 3. Solve the problem and press Enter.
    - **Right:** a success sound, a random cheer ("Sei un genio! 🧠"), confetti and flying 💩 emojis. You get +1 point.
