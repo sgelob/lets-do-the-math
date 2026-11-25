@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Check, Star, Sparkles, Plus, Minus, X, Divide, Settings, X as CloseIcon, Globe } from 'lucide-react';
+import { RefreshCw, Check, Star, Plus, Minus, X, Divide, Settings, X as CloseIcon, Globe } from 'lucide-react';
 import { Language, Operation, Difficulty, strings, loadLanguage, saveLanguage } from '../i18n';
 type GameStatus = 'idle' | 'correct' | 'incorrect';
 const pickIndex = (length: number) => Math.floor(Math.random() * length);
